@@ -42,9 +42,9 @@ def build_model():
 
 
 def run():
-    tfr_train_filenames = ["./data/tfrecords/train.tfrecords"]
-    tfr_valid_filenames = ["./data/tfrecords/valid.tfrecords"]
-    tfr_test_filenames = ["./data/tfrecords/test.tfrecords"]
+    tfr_train_filenames = ["./data/tfrecordst/frecords/house/train.tfrecords"]
+    tfr_valid_filenames = ["./data/tfrecords/tfrecords/house/valid.tfrecords"]
+    tfr_test_filenames = ["./data/tfrecords/tfrecords/house/test.tfrecords"]
 
     train_dataset = tfrecords_reader_dataset(tfr_train_filenames, n_readers=1, compression_type="GZIP")
     valid_dataset = tfrecords_reader_dataset(tfr_valid_filenames, n_readers=1, compression_type="GZIP")
