@@ -42,9 +42,9 @@ def build_model():
 
 
 def run():
-    tfr_train_filenames = ["./data/tfrecordst/frecords/house/train.tfrecords"]
-    tfr_valid_filenames = ["./data/tfrecords/tfrecords/house/valid.tfrecords"]
-    tfr_test_filenames = ["./data/tfrecords/tfrecords/house/test.tfrecords"]
+    tfr_train_filenames = ["./data/tfrecords/house/train.tfrecords"]
+    tfr_valid_filenames = ["./data/tfrecords/house/valid.tfrecords"]
+    tfr_test_filenames = ["./data/tfrecords/house/test.tfrecords"]
 
     train_dataset = tfrecords_reader_dataset(tfr_train_filenames, n_readers=1, compression_type="GZIP")
     valid_dataset = tfrecords_reader_dataset(tfr_valid_filenames, n_readers=1, compression_type="GZIP")
@@ -52,7 +52,13 @@ def run():
     model = build_model()
 
     print("train" + "=" * 10)
-    callbacks = [keras.callbacks.EarlyStopping(patience=5, min_delta=1e-2)]
+    output_model_file = "./output/model/house/h5/model.h5"
+    logdir = "./output/tensorboard/house"
+    callbacks = [
+        keras.callbacks.EarlyStopping(patience=5, min_delta=1e-2),
+        keras.callbacks.ModelCheckpoint(output_model_file, save_best_only=True, save_weight_only=False),
+        keras.callbacks.TensorBoard(logdir)
+    ]
     history = model.fit(train_dataset,
                         validation_data=valid_dataset,
                         steps_per_epoch=11160 // 32,
@@ -66,5 +72,51 @@ def run():
     model.evaluate(test_dataset, steps=5160 // 32)
 
 
+def run2():
+    tfr_train_filenames = ["./data/tfrecords/house/train.tfrecords"]
+    tfr_valid_filenames = ["./data/tfrecords/house/valid.tfrecords"]
+    tfr_test_filenames = ["./data/tfrecords/house/test.tfrecords"]
+
+    train_dataset = tfrecords_reader_dataset(tfr_train_filenames, n_readers=1, compression_type="GZIP")
+    valid_dataset = tfrecords_reader_dataset(tfr_valid_filenames, n_readers=1, compression_type="GZIP")
+    test_dataset = tfrecords_reader_dataset(tfr_test_filenames, n_readers=1, compression_type="GZIP")
+    model = build_model()
+
+    print("train" + "=" * 10)
+    logdir = "./output/tensorboard/house"
+    callbacks = [
+        keras.callbacks.EarlyStopping(patience=5, min_delta=1e-2),
+        keras.callbacks.TensorBoard(logdir)
+    ]
+    history = model.fit(train_dataset,
+                        validation_data=valid_dataset,
+                        steps_per_epoch=11160 // 32,
+                        validation_steps=3870 // 32,
+                        epochs=100,
+                        callbacks=callbacks)
+
+    print(history.history)
+
+    print("test" + "=" * 10)
+    model.evaluate(test_dataset, steps=5160 // 32)
+
+    output_model = "./output/model/house/saved_graph/"
+    tf.saved_model.save(model, output_model)
+
+
+def load_saved_model():
+    output_model = "./output/model/house/saved_graph/"
+    model = tf.saved_model.load(output_model)
+    print(model.signatures.keys())
+    inference = model.signatures["serving_default"]
+    print(inference)
+    print(inference.structured_outputs)
+    x = tf.constant([[1.0] * 8], dtype=tf.float32)
+    y = inference(x)
+
+    print(y)
+    print(y["dense_1"])
+
+
 if __name__ == '__main__':
-    run()
+    load_saved_model()
